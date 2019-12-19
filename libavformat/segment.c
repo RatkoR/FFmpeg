@@ -26,6 +26,7 @@
 
 #include <float.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include "avformat.h"
 #include "avio_internal.h"
@@ -205,14 +206,20 @@ static int set_segment_filename(AVFormatContext *s)
     if (seg->segment_idx_wrap)
         seg->segment_idx %= seg->segment_idx_wrap;
     if (seg->use_strftime) {
-        time_t now0;
         struct tm *tm, tmpbuf;
-        time(&now0);
-        tm = localtime_r(&now0, &tmpbuf);
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        tm = localtime_r(&tv.tv_sec, &tmpbuf);
         if (!strftime(buf, sizeof(buf), s->url, tm)) {
             av_log(oc, AV_LOG_ERROR, "Could not get segment filename with strftime\n");
             return AVERROR(EINVAL);
         }
+        buf[strlen(buf) - 3] = '\0'; // remove ending .ts
+        if (!av_strlcatf(buf, sizeof(buf), ".%04ld.ts", tv.tv_usec)) {
+            av_log(oc, AV_LOG_ERROR, "Could not get useconds\n");
+            return AVERROR(EINVAL);
+        }
+        av_log(NULL, AV_LOG_INFO, "BUFFER %s !!!!\n", buf);
     } else if (av_get_frame_filename(buf, sizeof(buf),
                                      s->url, seg->segment_idx) < 0) {
         av_log(oc, AV_LOG_ERROR, "Invalid segment filename template '%s'\n", s->url);
