@@ -202,6 +202,7 @@ static int set_segment_filename(AVFormatContext *s)
     int ret;
     char buf[1024];
     char *new_name;
+    char *buf2 = NULL;
 
     if (seg->segment_idx_wrap)
         seg->segment_idx %= seg->segment_idx_wrap;
@@ -214,11 +215,12 @@ static int set_segment_filename(AVFormatContext *s)
             av_log(oc, AV_LOG_ERROR, "Could not get segment filename with strftime\n");
             return AVERROR(EINVAL);
         }
-        buf[strlen(buf) - 3] = '\0'; // remove ending .ts
-        if (!av_strlcatf(buf, sizeof(buf), ".%04ld.ts", tv.tv_usec)) {
-            av_log(oc, AV_LOG_ERROR, "Could not get useconds\n");
+        buf2 = av_strireplace(buf, "%N", av_d2str(tv.tv_usec));
+        if (!buf2) {
+            av_log(oc, AV_LOG_ERROR, "Could not set useconds\n");
             return AVERROR(EINVAL);
         }
+        av_strlcpy(buf, buf2, sizeof(buf));
     } else if (av_get_frame_filename(buf, sizeof(buf),
                                      s->url, seg->segment_idx) < 0) {
         av_log(oc, AV_LOG_ERROR, "Invalid segment filename template '%s'\n", s->url);
