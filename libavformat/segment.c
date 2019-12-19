@@ -219,7 +219,6 @@ static int set_segment_filename(AVFormatContext *s)
             av_log(oc, AV_LOG_ERROR, "Could not get useconds\n");
             return AVERROR(EINVAL);
         }
-        av_log(NULL, AV_LOG_INFO, "BUFFER %s !!!!\n", buf);
     } else if (av_get_frame_filename(buf, sizeof(buf),
                                      s->url, seg->segment_idx) < 0) {
         av_log(oc, AV_LOG_ERROR, "Invalid segment filename template '%s'\n", s->url);
